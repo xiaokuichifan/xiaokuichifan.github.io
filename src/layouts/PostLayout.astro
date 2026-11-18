@@ -1,46 +1,160 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import type { MarkdownHeading } from "astro";
 import BaseLayout from "./BaseLayout.astro";
 import TagList from "../components/TagList.astro";
-import { formatDate } from "../lib/posts";
+import { formatDate, postHref, readingMinutesFromPost } from "../lib/posts";
 import { site } from "../site.config";
 import "katex/dist/katex.min.css";
 
 interface Props {
   post: CollectionEntry<"posts">;
+  headings: MarkdownHeading[];
+  newer?: CollectionEntry<"posts">;
+  older?: CollectionEntry<"posts">;
 }
 
-const { post } = Astro.props;
+const { post, headings, newer, older } = Astro.props;
+const minutes = readingMinutesFromPost(post);
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const authorUrl = site.profiles.find((item) => item.label === "GitHub")?.href;
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   headline: post.data.title,
   datePublished: post.data.date.toISOString().slice(0, 10),
   description: post.data.description,
+  timeRequired: `PT${minutes}M`,
   inLanguage: site.locale,
   keywords: post.data.tags.join(", "),
   author: {
     "@type": "Person",
     name: site.author,
+    ...(authorUrl ? { url: authorUrl } : {}),
   },
 }).replace(/</g, "\\u003c");
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description} ogType="article">
+  <div class="progress" aria-hidden="true">
+    <span id="reading-progress"></span>
+  </div>
   <article class="post">
-    <header class="post-header">
-      <time datetime={post.data.date.toISOString().slice(0, 10)}>{formatDate(post.data.date)}</time>
-      <h1>
-        {post.data.title}
-        {post.data.draft && <span class="draft-badge">草稿</span>}
-      </h1>
-      <p class="post-description">{post.data.description}</p>
-      <TagList tags={post.data.tags} />
-    </header>
-    <div class="prose">
-      <slot />
+    <div class="post-frame">
+      <header class="post-header">
+        <p class="post-meta">
+          <time datetime={post.data.date.toISOString().slice(0, 10)}>{formatDate(post.data.date)}</time>
+          <span aria-hidden="true">·</span>
+          <span>阅读约 {minutes} 分钟</span>
+        </p>
+        <h1>
+          {post.data.title}
+          {post.data.draft && <span class="draft-badge">草稿</span>}
+        </h1>
+        <p class="post-description">{post.data.description}</p>
+        <TagList tags={post.data.tags} />
+      </header>
+      {
+        toc.length > 0 && (
+          <nav class="toc" aria-label="目录">
+            <p class="toc-label">目录</p>
+            <ol>
+              {toc.map((heading) => (
+                <li class={`depth-${heading.depth}`}>
+                  <a href={`#${heading.slug}`}>{heading.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+      <div class="prose">
+        <slot />
+      </div>
+      <nav class="post-pager" aria-label="继续阅读">
+      {
+        newer && (
+          <a class="pager-link" href={postHref(newer.id)}>
+            <span>较新</span>
+            {newer.data.title}
+          </a>
+        )
+      }
+      {
+        older && (
+          <a class="pager-link" href={postHref(older.id)}>
+            <span>较旧</span>
+            {older.data.title}
+          </a>
+        )
+      }
+      <a class="pager-all" href="/posts/">全部文章</a>
+      </nav>
     </div>
-    <p class="post-nav"><a href="/posts/">← 全部文章</a></p>
   </article>
   <script type="application/ld+json" set:html={jsonLd} />
+  <script>
+    function updateProgress(): void {
+      const bar = document.getElementById("reading-progress");
+      const article = document.querySelector<HTMLElement>(".post");
+      if (!bar || !article) return;
+      const start = window.scrollY + article.getBoundingClientRect().top;
+      const end = start + article.offsetHeight - window.innerHeight;
+      let ratio = 0;
+      if (end <= start) {
+        ratio = article.getBoundingClientRect().bottom <= window.innerHeight ? 1 : 0;
+      } else {
+        ratio = (window.scrollY - start) / (end - start);
+      }
+      const clamped = Math.min(1, Math.max(0, ratio));
+      bar.style.transform = `scaleX(${clamped})`;
+    }
+
+    function headingId(hash: string): string {
+      const raw = hash.startsWith("#") ? hash.slice(1) : hash;
+      try {
+        return decodeURIComponent(raw);
+      } catch {
+        return raw;
+      }
+    }
+
+    function markCurrent(links: HTMLAnchorElement[], current: HTMLAnchorElement | undefined): void {
+      for (const link of links) link.removeAttribute("aria-current");
+      current?.setAttribute("aria-current", "location");
+    }
+
+    function setupToc(): void {
+      const toc = document.querySelector<HTMLElement>(".toc");
+      if (!toc) return;
+      const links = [...toc.querySelectorAll<HTMLAnchorElement>("a")];
+      const pairs: Array<[HTMLElement, HTMLAnchorElement]> = [];
+      for (const link of links) {
+        const heading = document.getElementById(headingId(link.hash));
+        if (heading) pairs.push([heading, link]);
+      }
+      if (pairs.length === 0 || !("IntersectionObserver" in window)) return;
+      markCurrent(links, pairs[0][1]);
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          const target = visible[0]?.target;
+          if (!target) return;
+          markCurrent(
+            links,
+            pairs.find(([heading]) => heading === target)?.[1],
+          );
+        },
+        { rootMargin: "-12% 0px -68% 0px", threshold: [0, 1] },
+      );
+      for (const [heading] of pairs) observer.observe(heading);
+    }
+
+    updateProgress();
+    setupToc();
+    document.addEventListener("scroll", updateProgress, { passive: true });
+    window.addEventListener("resize", updateProgress);
+  </script>
 </BaseLayout>

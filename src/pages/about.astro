@@ -1,22 +1,57 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Avatar from "../components/Avatar.astro";
+import CoverMark from "../components/CoverMark.astro";
+import ProfileLinks from "../components/ProfileLinks.astro";
+import TopicGrid from "../components/TopicGrid.astro";
+import { getPublishedPosts } from "../lib/posts";
 import { site } from "../site.config";
+
+const posts = await getPublishedPosts();
 ---
 
 <BaseLayout title="关于" description={`${site.author}：${site.description}`}>
-  <p class="kicker">关于</p>
-  <h1 class="page-title">{site.author}</h1>
-  <div class="prose">
-    {site.about.map((paragraph) => <p>{paragraph}</p>)}
-  </div>
-  <dl class="about-topics">
-    {
-      site.topics.map((topic) => (
+  <header class="about-panel">
+    <div class="about-copy">
+      <div class="identity">
+        <Avatar />
         <div>
-          <dt>{topic.name}</dt>
-          <dd>{topic.detail}</dd>
+          <p class="kicker">关于</p>
+          <h1 class="page-title">{site.author}</h1>
         </div>
-      ))
-    }
-  </dl>
+      </div>
+      <div class="prose">
+        {site.about.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+      <ProfileLinks />
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <CoverMark seed="about" variant="hero" />
+    </div>
+  </header>
+
+  <section class="band" aria-labelledby="about-topics">
+    <div class="section-head">
+      <h2 id="about-topics">研究关注</h2>
+    </div>
+    <TopicGrid posts={posts} />
+  </section>
+
+  {
+    site.projects.length > 0 && (
+      <section class="band" aria-labelledby="about-projects">
+        <div class="section-head">
+          <h2 id="about-projects">项目</h2>
+          <a href="/projects/">查看项目</a>
+        </div>
+        <ul class="about-project-links">
+          {site.projects.map((project) => (
+            <li>
+              <a href="/projects/">{project.name}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 </BaseLayout>

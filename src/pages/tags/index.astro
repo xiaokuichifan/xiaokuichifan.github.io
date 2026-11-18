@@ -1,25 +1,19 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getPublishedPosts, getTagCounts, tagHref } from "../../lib/posts";
+import TagCloud from "../../components/TagCloud.astro";
+import { getPublishedPosts, getTagCounts } from "../../lib/posts";
 
 const tags = getTagCounts(await getPublishedPosts());
 ---
 
 <BaseLayout title="标签" description="按标签浏览笔记。">
   <h1 class="page-title">标签</h1>
-  <p class="page-intro">点进一个标签，只看这一类笔记。</p>
+  <p class="page-intro">点进一个标签，只看这一类笔记。字号会随篇数略微变化。</p>
   {
     tags.length === 0 ? (
       <p class="empty">还没有标签。</p>
     ) : (
-      <ul class="tag-index">
-        {tags.map(({ tag, count }) => (
-          <li>
-            <a href={tagHref(tag)}>{tag}</a>
-            <span>{count}</span>
-          </li>
-        ))}
-      </ul>
+      <TagCloud tags={tags} />
     )
   }
 </BaseLayout>

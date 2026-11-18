@@ -13,6 +13,10 @@ const posts = defineCollection({
     description: z.string(),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
+    /** 为 true 时优先出现在首页，并标成「置顶」。 */
+    featured: z.boolean().default(false),
+    /** 封面图，站点根路径，例如 /images/cover.png。不写则用生成的色块。 */
+    cover: z.string().optional(),
   }),
 });
 

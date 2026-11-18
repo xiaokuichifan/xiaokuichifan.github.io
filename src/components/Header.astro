@@ -3,6 +3,11 @@ import { site } from "../site.config";
 import ThemeToggle from "./ThemeToggle.astro";
 
 const pathname = Astro.url.pathname;
+const nav = site.nav.filter((item) => {
+  const isProjects = item.href === "/projects" || item.href === "/projects/";
+  if (!isProjects) return true;
+  return site.projects.length > 0 || site.showProjectsNavWhenEmpty;
+});
 
 function isCurrent(href: string) {
   if (href === "/") return pathname === "/";
@@ -12,12 +17,21 @@ function isCurrent(href: string) {
 
 <header class="site-header">
   <div class="header-inner">
-    <a class="brand" href="/">{site.title}</a>
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="28" height="28">
+          <rect width="32" height="32" rx="8" fill="currentColor" opacity="0.1"></rect>
+          <ellipse cx="16" cy="16" rx="11" ry="6.2" fill="var(--accent)" transform="rotate(-32 16 16)"></ellipse>
+          <ellipse cx="16" cy="16" rx="4.2" ry="2.1" fill="var(--bg)" transform="rotate(-32 16 16)"></ellipse>
+        </svg>
+      </span>
+      <span>{site.title}</span>
+    </a>
     <div class="nav-row">
       <nav aria-label="主导航">
         <ul class="nav-list">
           {
-            site.nav.map((item) => (
+            nav.map((item) => (
               <li>
                 <a href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
                   {item.label}
