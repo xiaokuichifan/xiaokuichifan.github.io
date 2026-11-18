@@ -3,6 +3,11 @@ import { site } from "../site.config";
 import ThemeToggle from "./ThemeToggle.astro";
 
 const pathname = Astro.url.pathname;
+const nav = site.nav.filter((item) => {
+  const isProjects = item.href === "/projects" || item.href === "/projects/";
+  if (!isProjects) return true;
+  return site.projects.length > 0 || site.showProjectsNavWhenEmpty;
+});
 
 function isCurrent(href: string) {
   if (href === "/") return pathname === "/";
@@ -26,7 +31,7 @@ function isCurrent(href: string) {
       <nav aria-label="主导航">
         <ul class="nav-list">
           {
-            site.nav.map((item) => (
+            nav.map((item) => (
               <li>
                 <a href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
                   {item.label}

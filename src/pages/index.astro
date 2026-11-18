@@ -95,13 +95,17 @@ const handleExternal = handle ? /^https?:\/\//i.test(handle.href) : false;
     }
   </section>
 
-  <section class="band" aria-labelledby="projects-title">
-    <div class="section-head">
-      <h2 id="projects-title">项目</h2>
-      <a href="/projects/">全部项目</a>
-    </div>
-    <ProjectList heading="h3" />
-  </section>
+  {
+    site.projects.length > 0 && (
+      <section class="band" aria-labelledby="projects-title">
+        <div class="section-head">
+          <h2 id="projects-title">项目</h2>
+          <a href="/projects/">全部项目</a>
+        </div>
+        <ProjectList heading="h3" />
+      </section>
+    )
+  }
 
   {
     tags.length > 0 && (

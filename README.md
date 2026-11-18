@@ -82,7 +82,9 @@ import Embed from "../../components/Embed.astro";
 - `avatar.src`：头像路径。留空就显示 `initials`。
 - `profiles`：GitHub、RSS 这类链接。
 - `topics`：研究关注。`tag` 和文章标签一致、而且已经有笔记时，卡片才会链到标签页。
-- `projects` 和 `projectsIntro`：项目页，以及首页上的项目区。`url` 留空则不放外链。
+- `projects`：项目列表。留空时首页和关于页不显示项目区。`url` 留空则不放外链。
+- `showProjectsNavWhenEmpty`：列表为空时，导航里要不要保留「项目」。默认 `false`。`/projects/` 仍可打开，文案是 `projectsEmpty`。
+- `projectsIntro`：有项目时，项目页开头的一段说明。留空则不显示。
 - `featuredPostId`：要置顶的文章 id（文件名去掉扩展名）。留空则展示最新一篇，并标成「最新」。
 - `footerNote`：页脚多一行。留空则不显示。
 - `about`：关于页正文，每一项是一段。

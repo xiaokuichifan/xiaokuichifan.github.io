@@ -1,3 +1,10 @@
+export type Project = {
+  name: string;
+  url: string;
+  summary: string;
+  note: string;
+};
+
 /**
  * 站点文字都在这个文件里改。
  *
@@ -69,23 +76,27 @@ export const site = {
       tag: "COLMAP",
     },
   ],
-  /** 项目页开头的说明。占位句可以改成空字符串来隐藏。 */
-  projectsIntro:
-    "【待填写】项目页开头的说明（编辑本文件的 projectsIntro）。换成你的话，或改成空字符串隐藏。",
   /**
-   * 项目卡片。name 用真实项目名。
-   * summary / note 里的占位请换成你自己的话；note 改成 "" 则不显示第二段。
-   * url 留空则不放外链，卡片上会标「链接待填写」。
-   * 要再加一个项目，复制这一段对象即可。
+   * 项目页开头的说明。只有 projects 里有条目时才显示。
+   * 留空则不显示。以「【待填写】」开头会套虚线框。
    */
-  projects: [
-    {
-      name: "spirula-studio",
-      url: "",
-      summary: "【待填写】说明 spirula-studio 是什么（编辑本文件的 projects）。请换成你自己的描述。",
-      note: "【待填写】状态或进度。没有就改成空字符串。",
-    },
-  ],
+  projectsIntro: "",
+  /**
+   * 项目卡片。留空数组时，首页和关于页都不显示项目区。
+   * 一条的形状：
+   * { name: "项目名", url: "", summary: "一两句话。", note: "" }
+   * url 留空则不放外链。note 留空则不显示第二段。
+   * summary / note 若以「【待填写】」开头，页面上会套虚线框。
+   */
+  projects: [] as Project[],
+  /**
+   * projects 为空时，导航里要不要留下「项目」。
+   * false：不放进导航。/projects/ 仍可打开，并显示 projectsEmpty。
+   * true：导航保留，点进去是同一句空状态。
+   */
+  showProjectsNavWhenEmpty: false,
+  /** 项目列表为空时，项目页上的那一句。留空则只剩标题。 */
+  projectsEmpty: "还没有公开的项目。",
   /** 页脚多出来的一行。留空则不显示。 */
   footerNote: "",
   about: [
