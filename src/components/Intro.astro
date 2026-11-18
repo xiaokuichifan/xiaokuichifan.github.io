@@ -1,0 +1,410 @@
+---
+import { site } from "../site.config";
+---
+
+<div class="intro" id="site-intro">
+  <canvas class="intro-canvas" width="1" height="1" aria-hidden="true"></canvas>
+  <div class="intro-mark" aria-hidden="true">
+    <span class="intro-rule"></span>
+    <p class="intro-title">{site.title}</p>
+    <p class="intro-meta">3DGS · LiDAR · SfM</p>
+  </div>
+  <button class="intro-skip" type="button">跳过</button>
+</div>
+
+<script is:inline>
+  (function () {
+    var root = document.documentElement;
+    if (!root.classList.contains("intro-on")) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      root.classList.remove("intro-on");
+      return;
+    }
+
+    var intro = document.getElementById("site-intro");
+    var canvas = intro && intro.querySelector("canvas");
+    var ctx = canvas && canvas.getContext("2d", { alpha: true });
+    if (!intro || !canvas || !ctx) {
+      root.classList.remove("intro-on");
+      if (intro) intro.remove();
+      return;
+    }
+
+    var DURATION = 2050;
+    var LEAVE_AT = 0.58;
+    var REVEAL_AT = 0.74;
+    var TILT = -0.42;
+    var skipButton = intro.querySelector(".intro-skip");
+    if (skipButton) skipButton.setAttribute("aria-label", "跳过开场动画");
+
+    var ended = false;
+    var revealed = false;
+    var skipped = false;
+    var raf = 0;
+    var skipTimer = 0;
+    var start = 0;
+    var sprites = null;
+    var theme = "";
+
+    function clamp(v, a, b) {
+      return Math.max(a, Math.min(b, v));
+    }
+
+    function smoothstep(edge0, edge1, x) {
+      var t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+      return t * t * (3 - 2 * t);
+    }
+
+    function mulberry32(seed) {
+      var a = seed >>> 0;
+      return function () {
+        a = (a + 0x6d2b79f5) | 0;
+        var t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    var rnd = mulberry32(0x3d65);
+    function randn() {
+      var u = Math.max(1e-6, rnd());
+      var v = rnd();
+      var n = Math.sqrt(-2 * Math.log(u)) * Math.cos(Math.PI * 2 * v);
+      return clamp(n, -1.55, 1.55);
+    }
+
+    function readRgb(name, fallback) {
+      var value = getComputedStyle(root).getPropertyValue(name).trim() || fallback;
+      var probe = document.createElement("canvas");
+      probe.width = probe.height = 1;
+      var pctx = probe.getContext("2d", { willReadFrequently: true });
+      pctx.fillStyle = "#000000";
+      pctx.fillStyle = value;
+      pctx.fillRect(0, 0, 1, 1);
+      var data = pctx.getImageData(0, 0, 1, 1).data;
+      return [data[0], data[1], data[2]];
+    }
+
+    function mix(a, b, t) {
+      return [
+        Math.round(a[0] + (b[0] - a[0]) * t),
+        Math.round(a[1] + (b[1] - a[1]) * t),
+        Math.round(a[2] + (b[2] - a[2]) * t),
+      ];
+    }
+
+    function makeSprite(rgb) {
+      var size = 160;
+      var sprite = document.createElement("canvas");
+      sprite.width = sprite.height = size;
+      var g = sprite.getContext("2d");
+      var r = size / 2;
+      var grad = g.createRadialGradient(r, r, 0, r, r, r);
+      grad.addColorStop(0, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ",0.96)");
+      grad.addColorStop(0.14, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ",0.62)");
+      grad.addColorStop(0.38, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ",0.16)");
+      grad.addColorStop(1, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ",0)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, size, size);
+      return sprite;
+    }
+
+    function ensureSprites() {
+      var next = root.getAttribute("data-theme") || "light";
+      if (sprites && next === theme) return;
+      theme = next;
+      var accent = readRgb("--accent", theme === "dark" ? "#f0a07a" : "#9a3412");
+      var ink = readRgb("--text", theme === "dark" ? "#f3efe7" : "#1f1a17");
+      sprites = {
+        accent: makeSprite(accent),
+        tone: makeSprite(mix(accent, ink, theme === "dark" ? 0.42 : 0.32)),
+        ink: makeSprite(ink),
+      };
+    }
+
+    function measureCloud() {
+      var bounds = intro.getBoundingClientRect();
+      var title = intro.querySelector(".intro-title");
+      var rect = title.getBoundingClientRect();
+      var width = bounds.width || window.innerWidth || 1;
+      var height = bounds.height || window.innerHeight || 1;
+      if (!rect.width) {
+        return { x: 0.5, y: 0.24, spread: 0.12 };
+      }
+      return {
+        x: (rect.left + rect.width / 2 - bounds.left) / width,
+        y: (rect.top + rect.height * 0.42 - bounds.top) / height,
+        spread: Math.min(0.16, Math.max(0.06, (rect.width / width) * 0.2)),
+      };
+    }
+
+    var width = window.innerWidth || 1200;
+    var compact = width < 720;
+    var plan = [
+      { kind: "glow", count: compact ? 3 : 4 },
+      { kind: "kernel", count: compact ? 8 : 11 },
+      { kind: "splat", count: compact ? 34 : 48 },
+      { kind: "point", count: compact ? 12 : 18 },
+    ];
+    var points = [];
+    var cosT = Math.cos(TILT);
+    var sinT = Math.sin(TILT);
+
+    plan.forEach(function (group) {
+      var i;
+      for (i = 0; i < group.count; i++) {
+        var kind = group.kind;
+        var reach = kind === "glow" ? 1.25 : kind === "point" ? 0.45 : kind === "kernel" ? 0.7 : 0.85;
+        var gx = randn() * 0.1 * reach;
+        var gy = randn() * 0.022 * reach;
+        var onRing = (kind === "splat" || kind === "kernel") && rnd() < 0.3;
+        var angle = rnd() * Math.PI * 2;
+        var sx;
+        var sy;
+        if (onRing) {
+          sx = 0.5 + Math.cos(angle) * (0.34 + rnd() * 0.16);
+          sy = 0.28 + Math.sin(angle) * (0.2 + rnd() * 0.08);
+        } else if (kind === "glow") {
+          sx = 0.5 + randn() * 0.16;
+          sy = 0.26 + randn() * 0.1;
+        } else {
+          sx = 0.5 + randn() * 0.38;
+          sy = 0.32 + randn() * 0.28;
+        }
+        var tint = "accent";
+        if (kind === "kernel") tint = rnd() < 0.7 ? "accent" : "tone";
+        if (kind === "splat") tint = rnd() < 0.55 ? "accent" : "tone";
+        if (kind === "point") tint = rnd() < 0.45 ? "ink" : "accent";
+        points.push({
+          sx: sx,
+          sy: sy,
+          ox: gx * cosT - gy * sinT,
+          oy: gx * sinT + gy * cosT,
+          delay: rnd() * (kind === "glow" ? 0.03 : 0.12),
+          phase: rnd() * Math.PI * 2,
+          rot0: rnd() * Math.PI,
+          rot1: TILT + (rnd() - 0.5) * (kind === "point" ? 0.15 : 0.55),
+          aspect: kind === "point" ? 1 : kind === "kernel" ? 1.7 + rnd() * 1.5 : 0.32 + rnd() * 1.9,
+          size:
+            kind === "glow"
+              ? 42 + rnd() * 28
+              : kind === "point"
+                ? 2.2 + rnd() * 2.4
+                : kind === "kernel"
+                  ? 14 + rnd() * 16
+                  : 8 + rnd() * 12,
+          alpha:
+            kind === "glow"
+              ? 0.035 + rnd() * 0.04
+              : kind === "point"
+                ? 0.4 + rnd() * 0.45
+                : kind === "kernel"
+                  ? 0.32 + rnd() * 0.28
+                  : 0.22 + rnd() * 0.28,
+          tint: tint,
+        });
+      }
+    });
+
+    function frameSize() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var rect = intro.getBoundingClientRect();
+      var w = rect.width || window.innerWidth;
+      var h = rect.height || window.innerHeight;
+      var pw = Math.max(1, Math.round(w * dpr));
+      var ph = Math.max(1, Math.round(h * dpr));
+      if (canvas.width !== pw || canvas.height !== ph) {
+        canvas.width = pw;
+        canvas.height = ph;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { w: w, h: h };
+    }
+
+    function draw(t) {
+      ensureSprites();
+      var size = frameSize();
+      var w = size.w;
+      var h = size.h;
+      var center = measureCloud();
+      var scale = center.spread / 0.1;
+      ctx.clearRect(0, 0, w, h);
+      var boost = theme === "dark" ? 1.08 : 1.45;
+      var i;
+      for (i = 0; i < points.length; i++) {
+        var p = points[i];
+        var raw = clamp((t - (0.02 + p.delay)) / 0.4, 0, 1);
+        var g = 1 - Math.pow(1 - raw, 4);
+        var homeX = center.x + p.ox * scale;
+        var homeY = center.y + p.oy * scale;
+        var nx = p.sx + (homeX - p.sx) * g;
+        var ny = p.sy + (homeY - p.sy) * g;
+        nx += Math.sin(t * 5.1 + p.phase) * 0.008 * (1 - g);
+        ny += Math.cos(t * 4.3 + p.phase) * 0.006 * (1 - g);
+        if (t > LEAVE_AT) {
+          var out = (t - LEAVE_AT) / (1 - LEAVE_AT);
+          out = out * out;
+          nx += (nx - center.x) * out * 0.12;
+          ny += (ny - center.y) * out * 0.12;
+        }
+        var env = smoothstep(0.01, 0.08, t) * (1 - smoothstep(LEAVE_AT, REVEAL_AT + 0.06, t));
+        var alpha = Math.min(1, p.alpha * env * boost);
+        if (alpha < 0.004) continue;
+        var dim = p.size * (1.08 - 0.08 * g);
+        ctx.save();
+        ctx.translate(nx * w, ny * h);
+        ctx.rotate(p.rot0 + (p.rot1 - p.rot0) * g);
+        ctx.scale(p.aspect, 1);
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(sprites[p.tint], -dim / 2, -dim / 2, dim, dim);
+        ctx.restore();
+      }
+    }
+
+    function overlayOpacity(t) {
+      if (t <= REVEAL_AT) return 1;
+      var u = clamp((t - REVEAL_AT) / 0.08, 0, 1);
+      return (1 - u) * (1 - u);
+    }
+
+    var leaving = false;
+
+    function beginLeave() {
+      if (leaving) return;
+      leaving = true;
+      intro.classList.add("is-leaving");
+    }
+
+    function beginReveal() {
+      if (revealed) return;
+      revealed = true;
+      beginLeave();
+      root.classList.add("intro-reveal");
+    }
+
+    function cleanup() {
+      window.removeEventListener("pointerdown", onPointer, true);
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("wheel", onWheel, { capture: true });
+      window.removeEventListener("touchmove", onTouch, { capture: true });
+      window.removeEventListener("scroll", onScroll, true);
+      document.removeEventListener("visibilitychange", onVisibility);
+      reduceQuery.removeEventListener("change", onReduce);
+    }
+
+    function endIntro() {
+      if (ended) return;
+      ended = true;
+      if (raf) cancelAnimationFrame(raf);
+      if (skipTimer) clearTimeout(skipTimer);
+      cleanup();
+      root.classList.add("intro-reveal");
+      root.classList.remove("intro-on");
+      intro.remove();
+    }
+
+    function skip() {
+      if (skipped || ended) return;
+      skipped = true;
+      if (raf) cancelAnimationFrame(raf);
+      beginReveal();
+      var opacity = intro.style.opacity === "" ? "1" : intro.style.opacity;
+      intro.style.transition = "none";
+      intro.style.opacity = opacity;
+      void intro.offsetWidth;
+      intro.style.transition = "opacity 240ms ease";
+      intro.style.opacity = "0";
+      skipTimer = setTimeout(endIntro, 260);
+    }
+
+    function onPointer() {
+      skip();
+    }
+
+    function onKey(event) {
+      if (event.repeat) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === "Shift" || event.key === "Meta" || event.key === "Control" || event.key === "Alt") return;
+      var scrolls = {
+        " ": 1,
+        ArrowDown: 1,
+        ArrowUp: 1,
+        ArrowLeft: 1,
+        ArrowRight: 1,
+        PageDown: 1,
+        PageUp: 1,
+        Home: 1,
+        End: 1,
+      };
+      if (scrolls[event.key]) event.preventDefault();
+      skip();
+    }
+
+    function onWheel(event) {
+      if (event.ctrlKey) return;
+      event.preventDefault();
+      skip();
+    }
+
+    function onTouch(event) {
+      event.preventDefault();
+      skip();
+    }
+
+    function onScroll() {
+      if (window.scrollY > 8) skip();
+    }
+
+    var pausedAt = 0;
+    function onVisibility() {
+      if (ended) return;
+      if (document.hidden) {
+        pausedAt = performance.now();
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        return;
+      }
+      if (pausedAt && start) start += performance.now() - pausedAt;
+      pausedAt = 0;
+      if (!skipped) raf = requestAnimationFrame(tick);
+    }
+
+    function onReduce(event) {
+      if (event.matches) skip();
+    }
+
+    var reduceQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    function tick(now) {
+      if (ended || skipped) return;
+      if (document.hidden) return;
+      if (!start) start = now;
+      var t = Math.min(1, (now - start) / DURATION);
+      draw(t);
+      intro.style.opacity = String(overlayOpacity(t));
+      if (t >= LEAVE_AT) beginLeave();
+      if (t >= REVEAL_AT) beginReveal();
+      if (t >= Math.min(1, REVEAL_AT + 0.12)) {
+        endIntro();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    if (window.scrollY > 8) {
+      root.classList.add("intro-reveal");
+      root.classList.remove("intro-on");
+      intro.remove();
+      return;
+    }
+
+    window.addEventListener("pointerdown", onPointer, true);
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    window.addEventListener("touchmove", onTouch, { passive: false, capture: true });
+    window.addEventListener("scroll", onScroll, true);
+    document.addEventListener("visibilitychange", onVisibility);
+    reduceQuery.addEventListener("change", onReduce);
+    raf = requestAnimationFrame(tick);
+  })();
+</script>
