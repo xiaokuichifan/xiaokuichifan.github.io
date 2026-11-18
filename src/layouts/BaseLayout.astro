@@ -3,6 +3,7 @@ import "../styles/global.css";
 import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import Intro from "../components/Intro.astro";
 import { site } from "../site.config";
 
 interface Props {
@@ -35,8 +36,35 @@ const documentTitle = title ? `${title} · ${site.title}` : site.title;
         } catch (e) {}
       })();
     </script>
+    <script is:inline>
+      (function () {
+        try {
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+          if (sessionStorage.getItem("kui-intro-seen") === "1") return;
+          sessionStorage.setItem("kui-intro-seen", "1");
+          document.documentElement.classList.add("intro-on");
+        } catch (e) {}
+      })();
+    </script>
+    <style is:inline>
+      .intro { display: none; }
+      html.intro-on .intro {
+        display: grid;
+        place-items: center;
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        overflow: hidden;
+        background: var(--bg, #f4f1ea);
+        color: var(--text, #1f1a17);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .intro { display: none !important; }
+      }
+    </style>
   </head>
   <body>
+    <Intro />
     <a class="skip-link" href="#main">跳到正文</a>
     <Header />
     <main id="main">
