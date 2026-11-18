@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ProjectList from "../../components/ProjectList.astro";
+import { isPlaceholder } from "../../lib/text";
+import { site } from "../../site.config";
+---
+
+<BaseLayout title="项目" description={`${site.author} 在做的项目。`}>
+  <h1 class="page-title">项目</h1>
+  {
+    site.projectsIntro && (
+      <p class:list={["page-intro", { placeholder: isPlaceholder(site.projectsIntro) }]}>
+        {site.projectsIntro}
+      </p>
+    )
+  }
+  {
+    site.projects.length === 0 ? (
+      <p class="empty">还没有项目。在 src/site.config.ts 的 projects 里加一条即可。</p>
+    ) : (
+      <ProjectList heading="h2" />
+    )
+  }
+</BaseLayout>

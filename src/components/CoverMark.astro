@@ -1,0 +1,97 @@
+---
+interface Props {
+  seed: string;
+  variant?: "card" | "hero" | "mini";
+}
+
+const { seed, variant = "card" } = Astro.props;
+
+function hashString(input: string): number {
+  let hash = 2166136261;
+  for (const char of input) {
+    hash ^= char.codePointAt(0) ?? 0;
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function unit(seed: number) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+type Tone = "accent" | "ink";
+
+interface Dot {
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+  rot: number;
+  opacity: string;
+  tone: Tone;
+}
+
+const rand = unit(hashString(`${seed}:${variant}`));
+const specs =
+  variant === "hero"
+    ? [
+        { n: 3, rx: [64, 36], ry: [22, 12], opacity: [0.09, 0.07] },
+        { n: 5, rx: [34, 22], ry: [11, 7], opacity: [0.22, 0.28] },
+        { n: 4, rx: [16, 12], ry: [6, 4], opacity: [0.34, 0.28] },
+      ]
+    : variant === "mini"
+      ? [
+          { n: 1, rx: [70, 16], ry: [24, 8], opacity: [0.16, 0.06] },
+          { n: 3, rx: [36, 22], ry: [12, 6], opacity: [0.28, 0.3] },
+        ]
+      : [
+          { n: 2, rx: [62, 28], ry: [20, 10], opacity: [0.1, 0.08] },
+          { n: 4, rx: [30, 20], ry: [10, 6], opacity: [0.26, 0.28] },
+          { n: 2, rx: [14, 8], ry: [6, 3], opacity: [0.4, 0.22] },
+        ];
+
+const spread = variant === "hero" ? 0.78 : 0.9;
+const dots: Dot[] = [];
+for (const spec of specs) {
+  for (let index = 0; index < spec.n; index += 1) {
+    dots.push({
+      cx: 100 + (rand() - 0.5) * 200 * spread,
+      cy: 130 + (rand() - 0.5) * 260 * spread,
+      rx: spec.rx[0] * 0.42 + rand() * spec.rx[1],
+      ry: spec.ry[0] * 0.42 + rand() * spec.ry[1],
+      rot: Math.round(rand() * 150 - 75),
+      opacity: (spec.opacity[0] + rand() * spec.opacity[1]).toFixed(2),
+      tone: rand() > 0.8 ? "ink" : "accent",
+    });
+  }
+}
+---
+
+<svg
+  class:list={["cover-mark", `cover-mark-${variant}`]}
+  viewBox="0 0 200 260"
+  preserveAspectRatio="xMidYMid slice"
+  aria-hidden="true"
+>
+  <rect width="200" height="260" fill="var(--cover-bg)"></rect>
+  <circle cx="46" cy="36" r="78" fill="var(--cover-accent)" opacity="0.1"></circle>
+  {
+    dots.map((dot) => (
+      <ellipse
+        cx={dot.cx}
+        cy={dot.cy}
+        rx={dot.rx}
+        ry={dot.ry}
+        fill={dot.tone === "ink" ? "var(--cover-ink)" : "var(--cover-accent)"}
+        opacity={dot.opacity}
+        transform={`rotate(${dot.rot} ${dot.cx} ${dot.cy})`}
+      />
+    ))
+  }
+</svg>

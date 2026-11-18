@@ -1,0 +1,23 @@
+---
+import { tagHref } from "../lib/posts";
+
+interface Props {
+  tags: { tag: string; count: number }[];
+}
+
+const { tags } = Astro.props;
+const max = Math.max(1, ...tags.map((item) => item.count));
+---
+
+<ul class="tag-cloud">
+  {
+    tags.map(({ tag, count }) => (
+      <li>
+        <a href={tagHref(tag)} style={`--weight: ${count / max}`}>
+          <span>{tag}</span>
+          <span class="tag-count">{count}</span>
+        </a>
+      </li>
+    ))
+  }
+</ul>

@@ -49,6 +49,8 @@ draft: false
 | `description` | 摘要 |
 | `tags` | 标签列表，可省略 |
 | `draft` | `true` 时只在 `npm run dev` 里可见，正式构建和 RSS 会跳过。可省略，默认发布 |
+| `featured` | 可省略。`true` 时首页把这篇标成「置顶」 |
+| `cover` | 可省略。封面图路径，例如 `/images/figure.png`。不写就用自动生成的色块 |
 
 写的时候可以用：
 
@@ -70,13 +72,24 @@ import Embed from "../../components/Embed.astro";
 
 标签页地址由标签名生成：空格变成连字符，字母改为小写，中文保留。`3D Gaussian Splatting` 对应 `/tags/3d-gaussian-splatting/`。
 
-## 修改标题和关于信息
+## 修改标题、关于和首页
 
-站点名称、简介、作者、关于页段落和首页上的研究方向，都在 [`src/site.config.ts`](src/site.config.ts)。改 `title` 一处即可，页头、首页、RSS 和浏览器标题会一起换。
+站点名称、简介、作者、头像、首页补充介绍、研究方向、项目和导航，都在 [`src/site.config.ts`](src/site.config.ts)。改 `title` 一处即可，页头、首页、RSS 和浏览器标题会一起换。
 
-关于页的正文是 `about` 数组，每一项是一段。研究方向在 `topics`。导航文字在 `nav`。
+以 `【待填写】` 开头的句子是占位，页面上会套虚线框。整句换成你自己的话、并且不再以这个前缀开头，虚线框就会消失。某一段不想显示，把字符串改成 `""`。
 
-关于页如果要加链接或更复杂的排版，再改 [`src/pages/about.astro`](src/pages/about.astro)。发布地址写在 `url`，要和 `astro.config.ts` 里的 `site` 保持一致（配置文件会直接读 `url`）。这是用户站点，根路径是 `/`，不要设置 `base`。
+- `heroNote`：首页标题下面多出来的一句介绍。
+- `avatar.src`：头像路径。留空就显示 `initials`。
+- `profiles`：GitHub、RSS 这类链接。
+- `topics`：研究关注。`tag` 和文章标签一致、而且已经有笔记时，卡片才会链到标签页。
+- `projects` 和 `projectsIntro`：项目页，以及首页上的项目区。`url` 留空则不放外链。
+- `featuredPostId`：要置顶的文章 id（文件名去掉扩展名）。留空则展示最新一篇，并标成「最新」。
+- `footerNote`：页脚多一行。留空则不显示。
+- `about`：关于页正文，每一项是一段。
+- `introMeta`：开场动画标题下的小字。
+- `nav`：页头导航文字。
+
+关于页如果要加更复杂的排版，再改 [`src/pages/about.astro`](src/pages/about.astro)。发布地址写在 `url`，要和 `astro.config.ts` 里的 `site` 保持一致（配置文件会直接读 `url`）。这是用户站点，根路径是 `/`，不要设置 `base`。
 
 ## 部署到 GitHub Pages
 

@@ -1,0 +1,41 @@
+---
+import type { CollectionEntry } from "astro:content";
+import CoverMark from "./CoverMark.astro";
+import { tagHref } from "../lib/posts";
+import { site } from "../site.config";
+
+interface Props {
+  posts: CollectionEntry<"posts">[];
+}
+
+const { posts } = Astro.props;
+---
+
+<ul class="topic-grid">
+  {
+    site.topics.map((topic, index) => {
+      const count = topic.tag
+        ? posts.filter((post) => post.data.tags.includes(topic.tag)).length
+        : 0;
+      return (
+        <li class="topic-card">
+          <div class="topic-top">
+            <div class="topic-mark" aria-hidden="true">
+              <CoverMark seed={topic.name} variant="mini" />
+            </div>
+            <p class="topic-index">{String(index + 1).padStart(2, "0")}</p>
+          </div>
+          <h3>{topic.name}</h3>
+          <p>{topic.detail}</p>
+          {count > 0 ? (
+            <a href={tagHref(topic.tag)}>
+              {count} 篇笔记
+            </a>
+          ) : (
+            <p class="topic-status">还没有笔记</p>
+          )}
+        </li>
+      );
+    })
+  }
+</ul>

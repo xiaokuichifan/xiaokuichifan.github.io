@@ -1,25 +1,46 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { formatDate, postHref } from "../lib/posts";
+import CoverMark from "./CoverMark.astro";
 import TagList from "./TagList.astro";
+import { formatDate, postHref, readingMinutesFromPost } from "../lib/posts";
 
 interface Props {
   post: CollectionEntry<"posts">;
   heading?: "h2" | "h3";
+  featured?: boolean;
+  kicker?: string;
 }
 
-const { post, heading = "h2" } = Astro.props;
+const { post, heading = "h2", featured = false, kicker } = Astro.props;
 const Title = heading;
+const minutes = readingMinutesFromPost(post);
+const href = postHref(post.id);
+const date = post.data.date.toISOString().slice(0, 10);
+const cover = post.data.cover?.trim() ?? "";
 ---
 
-<article class="post-card">
-  <time datetime={post.data.date.toISOString().slice(0, 10)}>{formatDate(post.data.date)}</time>
-  <div>
+<article class:list={["post-card", { feature: featured }]}>
+  <div class="post-cover" aria-hidden="true">
+    {
+      cover ? (
+        <img src={cover} alt="" />
+      ) : (
+        <CoverMark seed={post.id} variant={featured ? "hero" : "card"} />
+      )
+    }
+  </div>
+  <div class="post-card-body">
+    {kicker && <p class="kicker">{kicker}</p>}
+    <p class="post-meta">
+      <time datetime={date}>{formatDate(post.data.date)}</time>
+      <span aria-hidden="true">·</span>
+      <span>阅读约 {minutes} 分钟</span>
+    </p>
     <Title>
-      <a href={postHref(post.id)}>{post.data.title}</a>
+      <a href={href}>{post.data.title}</a>
       {post.data.draft && <span class="draft-badge">草稿</span>}
     </Title>
-    <p>{post.data.description}</p>
+    <p class="post-excerpt">{post.data.description}</p>
     <TagList tags={post.data.tags} />
   </div>
 </article>

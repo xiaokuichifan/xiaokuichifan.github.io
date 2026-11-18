@@ -1,16 +1,74 @@
 ---
 import { site } from "../site.config";
+import { getPublishedPosts, tagHref } from "../lib/posts";
+import { isPlaceholder } from "../lib/text";
 
 const year = new Date().getUTCFullYear();
+const posts = await getPublishedPosts();
+
+function isExternal(href: string) {
+  return /^https?:\/\//i.test(href);
+}
+
+const siteLinks = [
+  ...site.profiles.map((item) => ({ label: item.label, href: item.href })),
+  { label: "关于", href: "/about/" },
+  { label: "源码", href: site.repository },
+];
 ---
 
 <footer class="site-footer">
   <div class="footer-inner">
-    <p>{site.author} · {year}</p>
-    <p class="footer-links">
-      <a href="/rss.xml">RSS</a>
-      <a href="/about/">关于</a>
-      <a href={site.repository}>源码</a>
-    </p>
+    <div class="footer-col footer-brand-col">
+      <p class="footer-name">{site.author}</p>
+      <p class="footer-tagline">{site.description}</p>
+      {
+        site.footerNote && (
+          <p class:list={["footer-note", { placeholder: isPlaceholder(site.footerNote) }]}>
+            {site.footerNote}
+          </p>
+        )
+      }
+    </div>
+    <div class="footer-col">
+      <p class="footer-label">研究关注</p>
+      <ul class="footer-links">
+        {
+          site.topics.map((topic) => {
+            const count = topic.tag
+              ? posts.filter((post) => post.data.tags.includes(topic.tag)).length
+              : 0;
+            return (
+              <li>
+                {count > 0 ? <a href={tagHref(topic.tag)}>{topic.name}</a> : <span>{topic.name}</span>}
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+    <div class="footer-col">
+      <p class="footer-label">站点</p>
+      <ul class="footer-links">
+        {
+          siteLinks.map((link) => {
+            const external = isExternal(link.href);
+            return (
+              <li>
+                <a
+                  href={link.href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noopener noreferrer" : undefined}
+                >
+                  {link.label}
+                  {external && <span class="visually-hidden">（新窗口打开）</span>}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+    <p class="footer-copy">{site.author} · {year}</p>
   </div>
 </footer>

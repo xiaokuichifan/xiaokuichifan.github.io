@@ -1,0 +1,31 @@
+---
+import { site } from "../site.config";
+
+function isExternal(href: string) {
+  return /^https?:\/\//i.test(href);
+}
+---
+
+{
+  site.profiles.length > 0 && (
+    <ul class="hero-links">
+      {site.profiles.map((link) => {
+        const external = isExternal(link.href);
+        return (
+          <li>
+            <a
+              class="chip-link"
+              href={link.href}
+              target={external ? "_blank" : undefined}
+              rel={external ? "noopener noreferrer" : undefined}
+            >
+              {link.label}
+              {link.handle ? <span>{link.handle}</span> : null}
+              {external && <span class="visually-hidden">（新窗口打开）</span>}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  )
+}

@@ -1,0 +1,13 @@
+---
+import { site } from "../site.config";
+---
+
+{
+  site.avatar.src ? (
+    <img class="avatar" src={site.avatar.src} width="56" height="56" alt="" />
+  ) : (
+    <span class="avatar" aria-hidden="true">
+      {site.avatar.initials}
+    </span>
+  )
+}

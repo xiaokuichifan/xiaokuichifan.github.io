@@ -1,0 +1,52 @@
+---
+import { isPlaceholder } from "../lib/text";
+import { site } from "../site.config";
+
+interface Props {
+  heading?: "h2" | "h3";
+}
+
+const { heading = "h2" } = Astro.props;
+const Title = heading;
+
+function isExternal(href: string) {
+  return /^https?:\/\//i.test(href);
+}
+---
+
+<div class="project-list">
+  {
+    site.projects.map((project) => {
+      const external = project.url ? isExternal(project.url) : false;
+      return (
+        <article class="project-card">
+          <div class="project-name">
+            <Title>{project.name}</Title>
+            {project.url ? (
+              <a
+                href={project.url}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noopener noreferrer" : undefined}
+              >
+                打开链接
+                {external && <span class="visually-hidden">（新窗口打开）</span>}
+              </a>
+            ) : (
+              <p class="pending-chip">链接待填写</p>
+            )}
+          </div>
+          <div class="project-copy">
+            {project.summary && (
+              <p class:list={[{ placeholder: isPlaceholder(project.summary) }]}>{project.summary}</p>
+            )}
+            {project.note && (
+              <p class:list={["project-note", { placeholder: isPlaceholder(project.note) }]}>
+                {project.note}
+              </p>
+            )}
+          </div>
+        </article>
+      );
+    })
+  }
+</div>
