@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://xiaokuichifan.github.io/sitemap-index.xml

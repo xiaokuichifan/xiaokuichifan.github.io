@@ -1,0 +1,25 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatDate, postHref } from "../lib/posts";
+import TagList from "./TagList.astro";
+
+interface Props {
+  post: CollectionEntry<"posts">;
+  heading?: "h2" | "h3";
+}
+
+const { post, heading = "h2" } = Astro.props;
+const Title = heading;
+---
+
+<article class="post-card">
+  <time datetime={post.data.date.toISOString().slice(0, 10)}>{formatDate(post.data.date)}</time>
+  <div>
+    <Title>
+      <a href={postHref(post.id)}>{post.data.title}</a>
+      {post.data.draft && <span class="draft-badge">草稿</span>}
+    </Title>
+    <p>{post.data.description}</p>
+    <TagList tags={post.data.tags} />
+  </div>
+</article>

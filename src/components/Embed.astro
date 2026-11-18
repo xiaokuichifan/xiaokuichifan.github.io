@@ -1,0 +1,42 @@
+---
+/**
+ * 在 MDX 文章里嵌入 iframe / 三维查看器。
+ *
+ * ```mdx
+ * import Embed from "../../components/Embed.astro";
+ *
+ * <Embed src="https://example.com/viewer" title="高斯查看器" height={480}>
+ *   可选说明文字。
+ * </Embed>
+ * ```
+ */
+interface Props {
+  src: string;
+  title?: string;
+  height?: number | string;
+  allow?: string;
+}
+
+const {
+  src,
+  title = "嵌入内容",
+  height = 480,
+  allow = "fullscreen; xr-spatial-tracking; accelerometer; gyroscope",
+} = Astro.props;
+
+const heightValue = typeof height === "number" ? `${height}px` : height;
+---
+
+<figure class="embed">
+  <iframe
+    src={src}
+    title={title}
+    style={`height: ${heightValue}`}
+    loading="lazy"
+    allow={allow}
+    allowfullscreen
+    referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  <figcaption>
+    <slot>交互内容：{title}</slot>
+  </figcaption>
+</figure>

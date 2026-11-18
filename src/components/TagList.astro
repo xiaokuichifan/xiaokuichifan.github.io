@@ -1,0 +1,21 @@
+---
+import { tagHref } from "../lib/posts";
+
+interface Props {
+  tags: readonly string[];
+}
+
+const { tags } = Astro.props;
+---
+
+{
+  tags.length > 0 && (
+    <ul class="tags">
+      {tags.map((tag) => (
+        <li>
+          <a href={tagHref(tag)}>{tag}</a>
+        </li>
+      ))}
+    </ul>
+  )
+}

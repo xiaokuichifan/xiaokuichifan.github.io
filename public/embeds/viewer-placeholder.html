@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>三维查看器占位</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #141311;
+        color: #f3efe7;
+        font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .label {
+        position: absolute;
+        left: 1rem;
+        bottom: 0.85rem;
+        right: 1rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.02em;
+        color: #d9cfc3;
+      }
+      .label strong {
+        display: block;
+        color: #f0a07a;
+        font-weight: 600;
+        margin-bottom: 0.15rem;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <p class="label">
+      <strong>三维查看器占位</strong>
+      这里可以换成 3D Gaussian、LiDAR 或 COLMAP 的交互页面。
+    </p>
+    <script>
+      const canvas = document.getElementById("view");
+      const ctx = canvas.getContext("2d");
+      const splats = [
+        { x: 0.42, y: 0.46, rx: 0.16, ry: 0.05, rot: -0.5, color: "#1f6f78" },
+        { x: 0.55, y: 0.42, rx: 0.18, ry: 0.045, rot: -0.2, color: "#c45c26" },
+        { x: 0.68, y: 0.48, rx: 0.14, ry: 0.04, rot: 0.25, color: "#3d4c7a" },
+        { x: 0.5, y: 0.58, rx: 0.2, ry: 0.05, rot: 0.15, color: "#9a3412" },
+        { x: 0.66, y: 0.6, rx: 0.15, ry: 0.04, rot: -0.35, color: "#c4a15a" },
+      ];
+      const motion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function frame(time) {
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#141311";
+        ctx.fillRect(0, 0, w, h);
+        const spin = motion ? 0 : time / 4000;
+        for (const splat of splats) {
+          ctx.save();
+          ctx.translate(splat.x * w, splat.y * h);
+          ctx.rotate(splat.rot + spin);
+          ctx.fillStyle = splat.color;
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, splat.rx * w, splat.ry * h, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+        if (!motion) requestAnimationFrame(frame);
+      }
+
+      resize();
+      window.addEventListener("resize", resize);
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

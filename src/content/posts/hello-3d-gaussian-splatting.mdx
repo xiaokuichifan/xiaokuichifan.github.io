@@ -1,0 +1,102 @@
+---
+title: 从 SfM 到三维高斯：一篇笔记的写法示例
+date: 2026-11-18
+description: 用一篇关于 COLMAP 与 3D Gaussian Splatting 的短文，演示标题、代码高亮、LaTeX 公式、图片，以及如何嵌入交互内容。
+tags:
+  - 3D Gaussian Splatting
+  - COLMAP
+  - 笔记
+draft: false
+---
+
+import Embed from "../../components/Embed.astro";
+
+这是一篇示例。看完结构之后可以整篇删掉，或者留着当模板。正文以中文为主；专有名词保留英文，例如 3D Gaussian Splatting（三次元ガウススプラッティング）。
+
+## 从照片到稀疏点
+
+一条常见的流水线是：
+
+1. 用 COLMAP 做 SfM：提特征、匹配、增量式重建。
+2. 得到每张照片的相机位姿，以及一组稀疏三维点。
+3. 如果还有 LiDAR，用点云给场景一个度量尺度，再和相机对齐。
+
+稀疏点足够做标定和初始化，但不够用来看清表面。3D Gaussian Splatting 在这些点附近放上大量各向异性高斯，靠可微光栅化把照片重新画出来。
+
+### 相机中心
+
+COLMAP 把外参存成四元数 `qvec` 和平移 `tvec`。相机中心在世界坐标里是 $-R^{\top}t$。
+
+## 公式
+
+一个三维高斯写成
+
+$$
+G(\mathbf{x})=\exp\left(-\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu})^{\top}\Sigma^{-1}(\mathbf{x}-\boldsymbol{\mu})\right)
+$$
+
+协方差拆成旋转 $R$ 与缩放 $S$：$\Sigma = RSS^{\top}R^{\top}$。投影到图像上之后，二维协方差是 $\Sigma' = JW\Sigma W^{\top}J^{\top}$，其中 $J$ 是投影的雅可比，$W$ 是观察变换。
+
+沿一条光线把高斯从前到后叠起来，像素颜色是
+
+$$
+C = \sum_{i=1}^{N} c_i \alpha_i \prod_{j=1}^{i-1}(1-\alpha_j)
+$$
+
+美元符号如果不是公式，写成 `\$`，避免和行内数学 `$...$` 撞车。
+
+## 代码
+
+下面这段只说明笔记里的代码块会高亮，不是完整的 COLMAP 读取器。
+
+```python
+import numpy as np
+
+def camera_center(qvec: np.ndarray, tvec: np.ndarray) -> np.ndarray:
+    """COLMAP qvec 的顺序是 w, x, y, z。"""
+    w, x, y, z = qvec
+    rot = np.array(
+        [
+            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+        ]
+    )
+    return -rot.T @ tvec
+```
+
+重建命令可以记成普通的 shell 代码块：
+
+```bash
+colmap automatic_reconstructor \
+  --workspace_path ./workspace \
+  --image_path ./images
+```
+
+## 图片
+
+图放在 `public/images/`，用站点根路径引用。
+
+![各向异性高斯沿表面分布的示意，左侧是三台相机](/images/gaussian-splats.svg)
+
+椭圆是各向异性高斯，左侧梯形是相机视锥。正式笔记里换成自己的渲染图或点云切片即可。
+
+## 嵌入交互内容
+
+MDX 可以引用项目里的组件。`Embed` 是一个 iframe，之后把 `src` 换成高斯查看器、potree 或自己写的页面。
+
+<Embed src="/embeds/viewer-placeholder.html" title="三维查看器占位" height={320}>
+  占位页。正式使用时把 src 换成查看器地址。
+</Embed>
+
+对应的写法：
+
+```mdx
+import Embed from "../../components/Embed.astro";
+
+<Embed src="https://example.com/viewer" title="高斯查看器" height={480} />
+```
+
+## 草稿
+
+把文首的 `draft` 改成 `true` 之后，`npm run dev` 仍能打开这篇文章，生产构建和 RSS 会跳过它。

@@ -1,0 +1,41 @@
+---
+import { site } from "../site.config";
+
+interface Props {
+  title: string;
+  description: string;
+  ogType?: "website" | "article";
+}
+
+const { title, description, ogType = "website" } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url);
+const rss = new URL("/rss.xml", Astro.site ?? site.url);
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="generator" content={Astro.generator} />
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  title={site.title}
+  href={rss}
+/>
+<meta name="author" content={site.author} />
+<meta name="theme-color" content="#f4f1ea" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={ogType} />
+<meta property="og:url" content={canonical} />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:site_name" content={site.title} />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap"
+  rel="stylesheet"
+/>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="各向异性高斯示意">
+  <rect width="960" height="540" fill="#f6f1e8"/>
+  <g stroke="#e4d9c8" stroke-width="1">
+    <path d="M0 90H960M0 180H960M0 270H960M0 360H960M0 450H960"/>
+    <path d="M120 0V540M240 0V540M360 0V540M480 0V540M600 0V540M720 0V540M840 0V540"/>
+  </g>
+  <g fill="none" stroke="#9a3412" stroke-width="1.6" opacity="0.85">
+    <path d="M78 168h46l58 36v-92l-58 28z"/>
+    <path d="M78 168h46"/>
+    <path d="M124 140l70-18M124 196l92 28"/>
+  </g>
+  <g fill="none" stroke="#1f6f78" stroke-width="1.6" opacity="0.9">
+    <path d="M70 286h52l78 28v-78l-78 24z"/>
+    <path d="M122 262l96-8M122 310l120 22"/>
+  </g>
+  <g fill="none" stroke="#3d4c7a" stroke-width="1.6" opacity="0.9">
+    <path d="M86 404h42l64 22v-58l-64 18z"/>
+    <path d="M128 386l88 4M128 422l102 16"/>
+  </g>
+  <g fill="#c4a15a" opacity="0.28">
+    <ellipse cx="620" cy="300" rx="210" ry="46" transform="rotate(-8 620 300)"/>
+  </g>
+  <g>
+    <ellipse cx="470" cy="250" rx="78" ry="26" fill="#1f6f78" opacity="0.78" transform="rotate(-28 470 250)"/>
+    <ellipse cx="560" cy="228" rx="92" ry="24" fill="#c45c26" opacity="0.8" transform="rotate(-12 560 228)"/>
+    <ellipse cx="650" cy="246" rx="70" ry="22" fill="#3d4c7a" opacity="0.78" transform="rotate(8 650 246)"/>
+    <ellipse cx="730" cy="286" rx="84" ry="26" fill="#9a3412" opacity="0.72" transform="rotate(18 730 286)"/>
+    <ellipse cx="520" cy="312" rx="100" ry="28" fill="#c45c26" opacity="0.55" transform="rotate(16 520 312)"/>
+    <ellipse cx="640" cy="330" rx="120" ry="30" fill="#1f6f78" opacity="0.62" transform="rotate(-6 640 330)"/>
+    <ellipse cx="760" cy="348" rx="72" ry="20" fill="#3d4c7a" opacity="0.7" transform="rotate(24 760 348)"/>
+    <ellipse cx="580" cy="372" rx="88" ry="22" fill="#8a6a32" opacity="0.7" transform="rotate(-18 580 372)"/>
+  </g>
+  <g fill="#1f1a17">
+    <circle cx="500" cy="268" r="3.2"/>
+    <circle cx="590" cy="300" r="3.2"/>
+    <circle cx="690" cy="312" r="3.2"/>
+    <circle cx="748" cy="286" r="3"/>
+  </g>
+</svg>
