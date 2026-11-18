@@ -1,0 +1,16 @@
+---
+import { site } from "../site.config";
+
+const year = new Date().getUTCFullYear();
+---
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>{site.author} · {year}</p>
+    <p class="footer-links">
+      <a href="/rss.xml">RSS</a>
+      <a href="/about/">关于</a>
+      <a href={site.repository}>源码</a>
+    </p>
+  </div>
+</footer>

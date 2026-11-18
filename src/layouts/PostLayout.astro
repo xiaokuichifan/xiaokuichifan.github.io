@@ -1,0 +1,46 @@
+---
+import type { CollectionEntry } from "astro:content";
+import BaseLayout from "./BaseLayout.astro";
+import TagList from "../components/TagList.astro";
+import { formatDate } from "../lib/posts";
+import { site } from "../site.config";
+import "katex/dist/katex.min.css";
+
+interface Props {
+  post: CollectionEntry<"posts">;
+}
+
+const { post } = Astro.props;
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: post.data.title,
+  datePublished: post.data.date.toISOString().slice(0, 10),
+  description: post.data.description,
+  inLanguage: site.locale,
+  keywords: post.data.tags.join(", "),
+  author: {
+    "@type": "Person",
+    name: site.author,
+  },
+}).replace(/</g, "\\u003c");
+---
+
+<BaseLayout title={post.data.title} description={post.data.description} ogType="article">
+  <article class="post">
+    <header class="post-header">
+      <time datetime={post.data.date.toISOString().slice(0, 10)}>{formatDate(post.data.date)}</time>
+      <h1>
+        {post.data.title}
+        {post.data.draft && <span class="draft-badge">草稿</span>}
+      </h1>
+      <p class="post-description">{post.data.description}</p>
+      <TagList tags={post.data.tags} />
+    </header>
+    <div class="prose">
+      <slot />
+    </div>
+    <p class="post-nav"><a href="/posts/">← 全部文章</a></p>
+  </article>
+  <script type="application/ld+json" set:html={jsonLd} />
+</BaseLayout>
