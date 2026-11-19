@@ -34,7 +34,7 @@ export const site = {
    * GoatCounter 站点代码，例如 xiaokuichifan。
    * 也可以填 https://你的代码.goatcounter.com。留空则不加载统计脚本。
    */
-  goatcounterCode: "",
+  goatcounterCode: "xiaokuichifan",
   /**
    * IndexNow 密钥。部署成功后用它通知 Bing、Yandex。
    * 构建时会在站点根目录放同名的 txt。留空则不提交。
