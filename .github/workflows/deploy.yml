@@ -46,3 +46,17 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+      - name: Checkout
+        if: success()
+        continue-on-error: true
+        uses: actions/checkout@v5
+      - name: Setup Node
+        if: success()
+        continue-on-error: true
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Submit sitemap to IndexNow
+        if: success()
+        continue-on-error: true
+        run: node scripts/indexnow.mjs || true

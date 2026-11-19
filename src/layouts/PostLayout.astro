@@ -4,7 +4,7 @@ import type { MarkdownHeading } from "astro";
 import BaseLayout from "./BaseLayout.astro";
 import TagList from "../components/TagList.astro";
 import { formatDate, postHref, readingMinutesFromPost } from "../lib/posts";
-import { site } from "../site.config";
+import { absoluteUrl, blogPostingJsonLd, coverIsRaster, generatedOgPath, postDescription } from "../lib/seo";
 import "katex/dist/katex.min.css";
 
 interface Props {
@@ -17,25 +17,31 @@ interface Props {
 const { post, headings, newer, older } = Astro.props;
 const minutes = readingMinutesFromPost(post);
 const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
-const authorUrl = site.profiles.find((item) => item.label === "GitHub")?.href;
-const jsonLd = JSON.stringify({
-  "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  headline: post.data.title,
-  datePublished: post.data.date.toISOString().slice(0, 10),
-  description: post.data.description,
-  timeRequired: `PT${minutes}M`,
-  inLanguage: site.locale,
-  keywords: post.data.tags.join(", "),
-  author: {
-    "@type": "Person",
-    name: site.author,
-    ...(authorUrl ? { url: authorUrl } : {}),
-  },
-}).replace(/</g, "\\u003c");
+const summary = postDescription(post);
+const written = post.data.description?.trim() ?? "";
+const cover = post.data.cover?.trim() ?? "";
+const useCover = coverIsRaster(cover);
+const imagePath = useCover ? cover : generatedOgPath(post.id);
+const pageUrl = absoluteUrl(postHref(post.id));
+const jsonLd = blogPostingJsonLd(post, {
+  minutes,
+  image: absoluteUrl(imagePath),
+  url: pageUrl,
+});
 ---
 
-<BaseLayout title={post.data.title} description={post.data.description} ogType="article">
+<BaseLayout
+  title={post.data.title}
+  description={summary}
+  ogType="article"
+  image={imagePath}
+  imageAlt={post.data.title}
+  imageWidth={useCover ? undefined : 1200}
+  imageHeight={useCover ? undefined : 630}
+  publishedTime={post.data.date.toISOString()}
+  tags={post.data.tags}
+  jsonLd={jsonLd}
+>
   <div class="progress" aria-hidden="true">
     <span id="reading-progress"></span>
   </div>
@@ -51,7 +57,7 @@ const jsonLd = JSON.stringify({
           {post.data.title}
           {post.data.draft && <span class="draft-badge">草稿</span>}
         </h1>
-        <p class="post-description">{post.data.description}</p>
+        {written && <p class="post-description">{written}</p>}
         <TagList tags={post.data.tags} />
       </header>
       {
@@ -92,7 +98,6 @@ const jsonLd = JSON.stringify({
       </nav>
     </div>
   </article>
-  <script type="application/ld+json" set:html={jsonLd} />
   <script>
     function updateProgress(): void {
       const bar = document.getElementById("reading-progress");
