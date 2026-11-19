@@ -16,7 +16,7 @@ export type Project = {
  */
 export const site = {
   title: "KUI LI's Tech Notes",
-  description: "三维高斯泼溅、激光雷达与 SfM 摄影测量（COLMAP）的研究笔记。",
+  description: "三维重建与 AI 工作流的研究笔记：三维高斯泼溅、激光雷达、SfM 摄影测量（COLMAP），以及 AI 助手与自动化。",
   author: "KUI LI",
   locale: "zh-CN",
   url: "https://xiaokuichifan.github.io",
@@ -42,7 +42,7 @@ export const site = {
   indexNowKey: "b4e0248f35b788b87677418cfe27bafb",
   repository: "https://github.com/xiaokuichifan/xiaokuichifan.github.io",
   /** 开场动画标题下面那一行小字。 */
-  introMeta: "3DGS · LiDAR · SfM",
+  introMeta: "三维重建 · AI 工作流",
   /**
    * 头像。src 留空时显示 initials，不会去请求图片。
    * 要用照片：放进 public/images/，src 写成 "/images/文件名.jpg"。
@@ -94,6 +94,11 @@ export const site = {
       name: "SfM / COLMAP",
       detail: "从照片估计相机位姿和稀疏三维结构。",
       tag: "COLMAP",
+    },
+    {
+      name: "AI 工具与工作流",
+      detail: "用 AI 助手和自动化处理工程里的重复工作。",
+      tag: "AI 工作流",
     },
   ],
   /**
