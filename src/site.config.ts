@@ -20,6 +20,26 @@ export const site = {
   author: "KUI LI",
   locale: "zh-CN",
   url: "https://xiaokuichifan.github.io",
+  /**
+   * Google Search Console 的 HTML 标记验证码。
+   * 只要 content="..." 里面的那一串。留空则不输出 meta。
+   */
+  googleSiteVerification: "",
+  /**
+   * Bing 网站管理员工具的验证码，对应 meta name="msvalidate.01"。
+   * 留空则不输出。
+   */
+  bingSiteVerification: "",
+  /**
+   * GoatCounter 站点代码，例如 xiaokuichifan。
+   * 也可以填 https://你的代码.goatcounter.com。留空则不加载统计脚本。
+   */
+  goatcounterCode: "xiaokuichifan",
+  /**
+   * IndexNow 密钥。部署成功后用它通知 Bing、Yandex。
+   * 构建时会在站点根目录放同名的 txt。留空则不提交。
+   */
+  indexNowKey: "b4e0248f35b788b87677418cfe27bafb",
   repository: "https://github.com/xiaokuichifan/xiaokuichifan.github.io",
   /** 开场动画标题下面那一行小字。 */
   introMeta: "3DGS · LiDAR · SfM",

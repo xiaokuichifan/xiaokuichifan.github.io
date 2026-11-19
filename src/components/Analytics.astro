@@ -1,0 +1,119 @@
+---
+import { goatcounterEndpoint } from "../lib/seo";
+import { site } from "../site.config";
+
+const endpoint = goatcounterEndpoint(site.goatcounterCode);
+---
+
+{
+  endpoint && (
+    <>
+      <script is:inline data-goatcounter-endpoint={endpoint}>
+        (function () {
+          if (window.__kuiGc) return;
+          window.__kuiGc = true;
+          var current = document.currentScript;
+          var endpoint = current && current.getAttribute("data-goatcounter-endpoint");
+          if (!endpoint) return;
+          window.goatcounter = window.goatcounter || {};
+          window.goatcounter.no_onload = true;
+
+          var lastSent = "";
+          var timer = 0;
+          var tries = 0;
+          var waiting = false;
+
+          function pathOf(url) {
+            return url.pathname + url.search || "/";
+          }
+
+          function currentPath() {
+            var loc = pathOf(location);
+            var link = document.querySelector('link[rel="canonical"]');
+            if (!link) return loc;
+            try {
+              var canonicalUrl = new URL(link.href, location.href);
+              var here = location.hostname.replace(/^www\./, "");
+              var there = canonicalUrl.hostname.replace(/^www\./, "");
+              if (there !== here) return loc;
+              var canonical = pathOf(canonicalUrl);
+              if (canonical.replace(/\/+$/, "") === loc.replace(/\/+$/, "")) return canonical;
+              return loc;
+            } catch (err) {
+              return loc;
+            }
+          }
+
+          function send() {
+            if (!window.goatcounter || typeof window.goatcounter.count !== "function") {
+              if (tries++ > 80) return;
+              timer = setTimeout(send, 50);
+              return;
+            }
+            // 开场动画只盖住页面，不改变地址，也不把文档设成 hidden。
+            // 统计在文档可见时立刻发出，不等动画结束，动画结束也不再记一次。
+            if (document.visibilityState && document.visibilityState !== "visible") {
+              if (waiting) return;
+              waiting = true;
+              document.addEventListener("visibilitychange", function onVis() {
+                if (document.visibilityState !== "visible") return;
+                document.removeEventListener("visibilitychange", onVis);
+                waiting = false;
+                send();
+              });
+              return;
+            }
+            var path = currentPath();
+            if (path === lastSent) return;
+            var prev = lastSent;
+            lastSent = path;
+            var vars = { path: path, title: document.title };
+            if (prev) vars.referrer = location.origin + prev;
+            window.goatcounter.count(vars);
+          }
+
+          function schedule() {
+            tries = 0;
+            clearTimeout(timer);
+            timer = setTimeout(send, 40);
+          }
+
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", schedule);
+          } else {
+            schedule();
+          }
+
+          document.addEventListener("astro:page-load", schedule);
+          document.addEventListener("astro:after-swap", schedule);
+
+          var push = history.pushState;
+          history.pushState = function () {
+            var result = push.apply(history, arguments);
+            schedule();
+            return result;
+          };
+          var replace = history.replaceState;
+          history.replaceState = function () {
+            var result = replace.apply(history, arguments);
+            schedule();
+            return result;
+          };
+          window.addEventListener("popstate", schedule);
+          window.addEventListener("pageshow", function (event) {
+            if (!event.persisted) return;
+            lastSent = "";
+            schedule();
+          });
+        })();
+      </script>
+      <script
+        is:inline
+        async
+        src="https://gc.zgo.at/count.js"
+        data-goatcounter={endpoint}
+        data-goatcounter-settings='{"no_onload":true}'
+      />
+    </>
+  )
+}

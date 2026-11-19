@@ -40,7 +40,7 @@ const cover = post.data.cover?.trim() ?? "";
       <a href={href}>{post.data.title}</a>
       {post.data.draft && <span class="draft-badge">草稿</span>}
     </Title>
-    <p class="post-excerpt">{post.data.description}</p>
+    {post.data.description?.trim() && <p class="post-excerpt">{post.data.description}</p>}
     <TagList tags={post.data.tags} />
   </div>
 </article>

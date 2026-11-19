@@ -10,7 +10,8 @@ const posts = defineCollection({
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
-    description: z.string(),
+    /** 摘要。可省略。列表、RSS、meta description 和分享卡片都会用到。 */
+    description: z.string().default(""),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
     /** 为 true 时优先出现在首页，并标成「置顶」。 */

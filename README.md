@@ -32,7 +32,7 @@ npm run preview
 ---
 title: 文章标题
 date: 2026-11-18
-description: 一两句摘要，会出现在列表、标签页和 RSS 里。
+description: 一两句摘要，会出现在列表、RSS、搜索摘要和分享卡片里。可以不写。
 tags:
   - LiDAR
   - COLMAP
@@ -40,17 +40,17 @@ draft: false
 ---
 ```
 
-五个字段：
+字段：
 
 | 字段 | 作用 |
 | --- | --- |
 | `title` | 标题 |
 | `date` | 发布日期，`YYYY-MM-DD` |
-| `description` | 摘要 |
+| `description` | 可省略。摘要。列表、RSS、搜索结果和分享卡片都会用它。不写时，分享摘要退回正文开头，再不行就用站点简介 |
 | `tags` | 标签列表，可省略 |
 | `draft` | `true` 时只在 `npm run dev` 里可见，正式构建和 RSS 会跳过。可省略，默认发布 |
 | `featured` | 可省略。`true` 时首页把这篇标成「置顶」 |
-| `cover` | 可省略。封面图路径，例如 `/images/figure.png`。不写就用自动生成的色块 |
+| `cover` | 可省略。封面图路径，例如 `/images/figure.png`。不写就用自动生成的色块。若是 png、jpg、webp 或 gif，也会用作这篇的分享图；否则用构建时生成的分享图 |
 
 写的时候可以用：
 
@@ -103,3 +103,21 @@ import Embed from "../../components/Embed.astro";
 2. 在 **Build and deployment** 里，把 **Source** 选成 **GitHub Actions**。
 
 选好之后，之后每次推到 `main` 都会自动更新 <https://xiaokuichifan.github.io>。第一次如果 Actions 还没跑完，页面会暂时打不开。
+
+## 搜索引擎与访问统计
+
+每页都有标题、摘要、canonical、Open Graph、Twitter 卡片和 JSON-LD。`robots.txt` 指向 sitemap，RSS 写在页面 `<head>` 里。分享图在 `npm run build` 时生成。
+
+Google、Bing 的验证码和 GoatCounter 的统计代码都在 [`src/site.config.ts`](src/site.config.ts)。留空就不会输出对应的标签或脚本。
+
+| 字段 | 填什么 |
+| --- | --- |
+| `googleSiteVerification` | Google Search Console 里选 HTML 标记，把 `content` 里的那一串贴过来 |
+| `bingSiteVerification` | Bing 网站管理员工具给出的验证码 |
+| `goatcounterCode` | [GoatCounter](https://www.goatcounter.com) 的站点代码，例如 `xiaokuichifan`。也可以填完整地址 |
+
+GoatCounter 不使用 Cookie。注册后把代码填上，推到 `main` 即生效。
+
+部署成功后，Actions 会把 sitemap 里的地址提交给 IndexNow，用来通知 Bing 和 Yandex。这一步失败也不会让部署失败。若日志里没有 `accepted`，在 Actions 里把这个 workflow 再跑一次即可。Google 不接收 IndexNow。在 Search Console 验证通过后，再提交一次 sitemap：<https://xiaokuichifan.github.io/sitemap-index.xml>。
+
+`indexNowKey` 已经填好，一般不用改。

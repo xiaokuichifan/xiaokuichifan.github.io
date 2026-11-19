@@ -1,6 +1,7 @@
 import rss from "@astrojs/rss";
 import type { APIContext } from "astro";
 import { getPublishedPosts } from "../lib/posts";
+import { postDescription } from "../lib/seo";
 import { site } from "../site.config";
 
 export async function GET(context: APIContext) {
@@ -13,7 +14,7 @@ export async function GET(context: APIContext) {
     customData: `<language>${site.locale}</language>`,
     items: posts.map((post) => ({
       title: post.data.title,
-      description: post.data.description,
+      description: postDescription(post),
       pubDate: post.data.date,
       categories: [...post.data.tags],
       link: `/posts/${post.id}/`,

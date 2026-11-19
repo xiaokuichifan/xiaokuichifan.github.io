@@ -10,7 +10,18 @@ import { site } from "./src/site.config";
 export default defineConfig({
   site: site.url,
   output: "static",
-  integrations: [mdx(), sitemap()],
+  integrations: [
+    mdx(),
+    sitemap({
+      filter: (page) => {
+        const { pathname } = new URL(page);
+        if (pathname === "/rss.xml") return false;
+        if (pathname.endsWith(".txt")) return false;
+        if (pathname === "/og.png" || pathname.startsWith("/og/")) return false;
+        return true;
+      },
+    }),
+  ],
   markdown: {
     processor: unified({
       remarkPlugins: [remarkMath],
